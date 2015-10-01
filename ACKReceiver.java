@@ -1,19 +1,21 @@
 
 public class ACKReceiver {
 
-	public ACKReceiver(PacketWindow window) {
+	private RIPSocket window;
+
+	public ACKReceiver(RIPSocket window) {
 		this.window = window;
 	}
 
-	public receiveAckPacket(RIPPacket rip_pack) {
+	public void receiveAckPacket(RIPPacket rip_pack) {
 		if (! rip_pack.isAck()) {
-			throw new Exception("ACKReceiver.receiveAckPacket received a non-ack packet");
+			throw new RuntimeException("ACKReceiver.receiveAckPacket received a non-ack packet");
 		}
 
 		int seq = rip_pack.getSEQ();
 
 		PacketInfo info = window.getPacketInfoBySEQ(seq);
-		info.acked = true;
+		info.setAcked(true);
 		info.clearTimeout();
 	}
 }
