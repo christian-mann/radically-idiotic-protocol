@@ -1,61 +1,62 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Comparator;
+import java.util.concurrent.PriorityBlockingQueue;
 
-public class PacketRequeuer {
-	private RIPSocket window;
+public class PacketRequeuer implements Runnable {
+	private RIPSendingSocket window;
+	
+	private PriorityBlockingQueue<PacketInfo> packets;
+	
+	
 
-	private Map<Integer, Thread> timeouts;
-
-	public PacketRequeuer(RIPSocket window) {
+	public PacketRequeuer(RIPSendingSocket window) {
 		this.window = window;
-		this.timeouts = new HashMap<>();
-	}
-
-	public void timeoutRequeue(final PacketInfo info, long millis) {
-		Timeout t = new Timeout(new Runnable() {
-			public void run() {
-				if (info.isAcked()) {
-					return;
-				}
-
-				if (! info.isTimedOut()) {
-					throw new RuntimeException("wtf, packet is not timed out yet");
-				}
-
-				if (info.send_count > 10) {
-					throw new RuntimeException("tried 10 times, abandoning this packet");
-				}
-
-				window.send_queue.offer(info);
+		this.packets = new PriorityBlockingQueue<PacketInfo>(100, new Comparator<PacketInfo>() {
+			@Override
+			public int compare(PacketInfo p1, PacketInfo p2) {
+				// compare based on timeout timestamps
+				return p1.timeout < p2.timeout ? -1 : 1;
 			}
-		}, millis);
-
-		Thread thd = new Thread(t);
-		this.timeouts.put(info.getPacket().getSEQ(), thd);
-		thd.start();
+		});
 	}
 
-	public void clearTimeout(int seq) {
-		Thread t = timeouts.get(seq);
-		t.interrupt();
+	public void timeoutRequeue(final PacketInfo info) {
+		packets.add(info);
 	}
 
-	class Timeout implements Runnable {
-		private Runnable r;
-		private long millis;
-
-		public Timeout(Runnable r, long millis) {
-			this.r = r;
-			this.millis = millis;
+	@Override
+	public void run() {
+		try {
+			while (true) {
+				// obtain the top packet in the priority queue
+				PacketInfo nextPacket = this.packets.take();
+				if (nextPacket.isAcked()) {
+					// do nothing
+				} else if (nextPacket.isTimedOut()) {
+					// this packet has timed out
+					// re send it
+					window.send_queue.put(nextPacket);
+				} else {
+					// put it back
+					this.packets.add(nextPacket);
+				}
+			}
+		} catch (InterruptedException e) {
+			System.out.println("Requeuer interrupted");
 		}
-
-		public void run() {
-			try {
-				Thread.sleep(millis);
-				r.run();
-			} catch (InterruptedException ex) {
-				;
+	}
+	
+	public synchronized boolean isWaiting() {
+		if (this.packets.isEmpty()) {
+			return false;
+		} else {
+			PacketInfo topPacket = this.packets.peek();
+			if (topPacket != null) {
+//				System.out.printf("Waiting on packet with timestamp %d, expires in %d ms\r",
+//					topPacket.timeout,
+//					topPacket.timeout - System.currentTimeMillis()
+//				);
 			}
+			return true;
 		}
 	}
 }

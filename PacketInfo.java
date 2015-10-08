@@ -6,12 +6,16 @@ class PacketInfo {
 	private RIPPacket packet;
 
 	// if currentTime > timeout and send_count > 0 and not acked, then packet should be re-sent
-	private long timeout;
+	public long timeout;
 
 	public PacketInfo(byte[] data) {
-		this.packet = new RIPPacket(data);
+		this(new RIPPacket(data));
+	}
+	
+	public PacketInfo(RIPPacket pack) {
+		this.packet = pack;
 		this.send_count = 0;
-		this.setAcked(true);
+		this.setAcked(false);
 		this.timeout = 0;
 	}
 
@@ -28,8 +32,6 @@ class PacketInfo {
 	}
 
 	public boolean isTimedOut() {
-		System.out.println("current time = " + System.currentTimeMillis());
-		System.out.println("timeout = " + this.timeout);
 		return System.currentTimeMillis() >= this.timeout;
 	}
 
