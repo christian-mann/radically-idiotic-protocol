@@ -7,7 +7,7 @@ import edu.utulsa.unet.UDPSocket;
 public class MainRecv {
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		UDPSocket sock = new UDPSocket(9002);
+		UDPSocket sock = new UDPSocket(32456);
 		
 		FileOutputStream fos = new FileOutputStream("received.txt");
 		
