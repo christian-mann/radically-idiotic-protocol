@@ -33,7 +33,7 @@ class PacketSender implements Runnable {
 				
 				if (! packetInfo.isAcked()) {
 					// If it's already ACKed, then don't start a requeuer
-					packetInfo.setTimeout(50); // millis
+					packetInfo.setTimeout(1000); // millis
 		
 					window.requeuer.timeoutRequeue(
 						packetInfo

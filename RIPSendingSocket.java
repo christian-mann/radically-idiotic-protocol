@@ -30,7 +30,7 @@ class RIPSendingSocket {
 		try {
 			this.window_size = sock.getSendBufferSize();
 			System.out.println("DEBUG: Setting window size to" + 10);
-			this.window_size = 10;
+			this.window_size = 256;
 			System.out.println("Set window_size to" + this.window_size);
 		} catch (SocketException e) {
 			e.printStackTrace();
@@ -46,13 +46,10 @@ class RIPSendingSocket {
 	}
 
 	public synchronized void sendData(byte[] data) throws InterruptedException, SocketException {
-		// TODO: change this constant to RIPPacket.HEADER_LENGTH or something
-		if (data.length > sock.getSendBufferSize() - 200) {
-			throw new RuntimeException("Send a smaller packet >:[");
-		}
 
 		// split data into chunks
-		byte[][] chunks = RIPSendingSocket.chunkArray(data, this.window_size);
+		int chunk_size = Math.min(this.window_size-1, this.sock.getSendBufferSize() - RIPPacket.headerLength());
+		byte[][] chunks = RIPSendingSocket.chunkArray(data, chunk_size);
 
 		for (byte[] chunk : chunks) {
 			RIPPacket ripPacket = new RIPPacket(chunk);

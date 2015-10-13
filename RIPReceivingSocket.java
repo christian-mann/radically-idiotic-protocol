@@ -35,7 +35,14 @@ public class RIPReceivingSocket {
 	}
 
 	public void listenForever() {
-		byte[] buffer = new byte[200];
+		byte[] buffer;
+		try {
+			buffer = new byte[this.sock.getReceiveBufferSize()];
+		} catch (SocketException e1) {
+			e1.printStackTrace();
+			return;
+		}
+		
 		DatagramPacket dgPacket = new DatagramPacket(buffer, buffer.length);
 		this.shouldListen = true;
 		while (this.shouldListen) {

@@ -69,4 +69,15 @@ public class RIPPacket {
 		pack.payload = new byte[0];
 		return pack;
 	}
+	
+	public static int headerLength() {
+		return 
+			  1 // ack
+			+ 1 // fin
+			+ 4 // seq
+			+ 4 // winSz
+			+ 4 // check
+			+ 4 // len
+			;
+	}
 }

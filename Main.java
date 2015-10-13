@@ -11,8 +11,12 @@ public class Main {
 		RIPSendingSocket win = new RIPSendingSocket(sock, InetAddress.getByName("localhost"), 9002);
 		win.startThreads();
 		
-		for (int i = 0; i < 100; i++) {
-			String data = "Hello" + i;
+		for (int i = 0; i < 10; i++) {
+			String data = "";
+			for (int j = 0; j < 200; j++) {
+				data += j;
+			}
+			data += "\n";
 			win.sendData(data.getBytes());
 		}
 		win.finish();
